@@ -56,27 +56,27 @@ void Debuff_card::apply(Character& self, Character& target) {
 	switch (statusType) {
 	case StatusType::Poison:
 		target.addPoison(value);
-		std::cout << "Applied Poison (" << value << ")\n";
+		std::cout << "Applied Poison [" << value << "]\n";
 		break;
 
 	case StatusType::Bleed:
 		target.addBleed(value);
-		std::cout << "Applied Bleed (" << value << ")\n";
+		std::cout << "Applied Bleed [" << value << "]\n";
 		break;
 
 	case StatusType::Weak:
 		target.addWeak(value);
-		std::cout << "Applied Weak (" << value << " turns)\n";
+		std::cout << "Applied Weak [" << value << " turns]\n";
 		break;
 
 	case StatusType::Vulnerable:
 		target.addVulnerable(value);
-		std::cout << "Applied Vulnerable (" << value << " turns)\n";
+		std::cout << "Applied Vulnerable [" << value << " turns]\n";
 		break;
 
 	case StatusType::Fragile:
 		target.addFragile(value);
-		std::cout << "Applied Fragile (" << value << " turns)\n";
+		std::cout << "Applied Fragile [" << value << " turns]\n";
 		break;
 	}
 }

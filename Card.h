@@ -20,6 +20,7 @@ enum class StatusType {
 };
 
 
+//абстрактый класс карты
 class Card
 {
 protected: 
@@ -42,12 +43,13 @@ public:
 };
 
 
-
+// наследники класса карты
 class Attack_card : public Card {
 	int dmg;
 public:
+	//вызов конструктора с параметром type_value для урона базового класса Card
 	Attack_card(string n, string e_d, int m_c, int type_value) : Card(n, e_d, m_c, CardType::Attack), dmg(type_value) {}
-	void apply(Character& self, Character& target) override;
+	void apply(Character& self, Character& target) override; //переопределение виртуальной функции(применение эффекта карты)
 	void printCard() override;
 };
 
@@ -82,9 +84,14 @@ public:
 class Debuff_card : public Card {
 	StatusType statusType;
 	int value; // сила статуса (например, урон от яда, кровотечения)
+	int duration; // продолжительность эффекта (для статусов типа Weak, Vulnerable, Fragile)
 public:
 	// Добавлены значения по умолчанию, чтобы можно было вызывать и с 3 аргументами
-	Debuff_card(string n, string e_d, int m_c, StatusType st = StatusType::Poison, int val = 1) : Card(n, e_d, m_c, CardType::Debuff), statusType(st), value(val) {}
+	Debuff_card(string n, string e_d, int m_c,
+		StatusType st, int val, int dur)
+		: Card(n, e_d, m_c, CardType::Debuff),
+		statusType(st), value(val), duration(dur) {
+	}
 	void apply(Character& self, Character& target) override;
 	void printCard() override;
 };

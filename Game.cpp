@@ -49,8 +49,9 @@ void Game::PlayerTurn() {
 
             std::cout << "\nChoose action:\n";
             std::cout << " p <index>  - Play card with index\n";
+			std::cout << " r           - Draw card\n";
             std::cout << " a          - Basic attack\n";
-            std::cout << " e          - En turn\n";
+            std::cout << " e          - End turn\n";
             std::cout << "> ";
 
             std::string cmd;
@@ -73,7 +74,10 @@ void Game::PlayerTurn() {
                 std::cout << "-------------------------\n";
                 printPlayLog();
             }
-
+            else if (cmd == "r") {
+                player.drawCard();
+				std::cout << "Player draws a card.\n";
+            }
             else if (cmd == "a") {
                 int dmg = 2;
                 enemy.getAttacked(dmg);
