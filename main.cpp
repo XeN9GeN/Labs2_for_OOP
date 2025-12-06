@@ -1,49 +1,93 @@
-#define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
-#include "SoundProccFunc.h"
-int main(int argc, char* argv[]) {
-	
-	
-	SoundFunc soundFunc;
+﻿#include <iostream>
+#include <memory>
+#include <vector>
+#include <thread>
+#include <chrono>
+#include <random>
+#include <ctime>
 
-	int bytes_per_sample = (16 / 8) * 1;
-	int sample_rate = 44100;
+#include "Character.h"
+#include "Enemy.h"
+#include "Card.h"
+#include "Game.h"
+
+using namespace std;
+
+int main() {
+    Character player(30, 5, 10); // HP, Armor, Mana
+    Enemy enemy("Armored Goblin", 20, 10, 10);
+    Game game(player, enemy);
+    enemy.addCardToDeck(make_shared<Attack_card>("Slash", "Simple strike", 2, 3));
+    enemy.addCardToDeck(make_shared<Attack_card>("Heavy Blow", "Hard hit", 4, 5));
+    enemy.addCardToDeck(make_shared<Defense_card>("Shield", "Block", 2, 2));
+    enemy.addCardToDeck(make_shared<Heal_card>("Bandage", "Heal small", 3, 3));
+    enemy.addCardToDeck(make_shared<Buff_card>("Rage", "Random buff", 1));
+    enemy.addCardToDeck(make_shared<Debuff_card>("Curse", "Random debuff", 1));
+
+    player.addCardToDeck(make_shared<Attack_card>("Strike", "Basic attack", 2, 4));
+    player.addCardToDeck(make_shared<Defense_card>("Block", "Increase armor", 2, 3));
+    player.addCardToDeck(make_shared<Heal_card>("First Aid", "Restore health", 3, 5));
+    player.addCardToDeck(make_shared<Buff_card>("Inspiration", "Random buff", 1));
+    player.addCardToDeck(make_shared<Debuff_card>("Hex", "Random debuff", 1));
+    player.addCardToDeck(make_shared<Debuff_card>("Deadly Venom", "Applies poison", 1, StatusType::Poison, 4));
+    player.addCardToDeck(make_shared<Debuff_card>("Bleeding Strike", "Causes bleeding", 1, StatusType::Bleed, 3));
+    player.addCardToDeck(make_shared<Debuff_card>("Intimidate", "Weakens enemy", 1, StatusType::Weak, 2));
+
+    player.drawCard();
+    player.drawCard();
+    player.drawCard();
+    player.drawCard();
+
+    enemy.drawCard();
+    enemy.drawCard();
+    enemy.drawCard();
+    enemy.drawCard();
+
+    bool auto_mode = false;
+    cout << "Choose mode:\n";
+    cout << "1 - Auto battle\n";
+    cout << "2 - Manual battle (you play your turn)\n";
+    cout << "> ";
+
+    int choice;
+    cin >> choice;
+
+    if (choice == 1) {
+        auto_mode = true;
+        cout << "\n[MODE] Auto battle enabled.\n";
+    }
+    else {
+        auto_mode = false;
+        cout << "\n[MODE] Manual mode enabled.\n";
+    }
 
 
-	int start_ind = (sample_rate * sound.start_second * bytes_per_sample);
-	int end_ind = (sample_rate * sound.end_second * bytes_per_sample);
 
-	if (argc == 4) {
-		FILE* file = fopen(argv[1], "r+b");
-		sound.start_second = atoi(argv[2]);
-		sound.end_second = atoi(argv[3]);
-		
-		int start_ind = (sample_rate * sound.start_second * bytes_per_sample);
-		int end_ind = (sample_rate * sound.end_second * bytes_per_sample);
-		
-		std::cout << "Muting from " << sound.start_second << "s to " << sound.end_second << "s" << std::endl;
-		std::cout << "Byte range: " << end_ind << " - " << start_ind << std::endl;
-		soundFunc.mute(file, start_ind, end_ind);
 
-		fclose(file);
-	}
-	
-	if (argc==5){
-		FILE* file1 = fopen(argv[1], "r+b");
-		FILE* file2 = fopen(argv[2], "r+b");
-		FILE* output = fopen("test.wav", "wb");
-		sound.start_second = atoi(argv[3]);
-		sound.end_second = atoi(argv[4]);
+    std::cout << "Battle Start!" << endl;
 
-		long start_ind = (sample_rate * sound.start_second * bytes_per_sample);
-		long end_ind = (sample_rate * sound.end_second * bytes_per_sample);
-		
-		std::cout << "Mix file " << argv[1] << "with " << argv[2] << "from " << atoi(argv[3]) << "to " << atoi(argv[4]);
-		soundFunc.mix(file1, file2, output, start_ind, end_ind);
-		fclose(file1);
-		fclose(file2);
-		fclose(output);
-	}
-	
-	return 0;
+    int turn = 1;
+    while (player.getHealth() > 0 && enemy.getHealth() > 0) {
+        std::cout << "\n\n\n\n";
+        std::cout << "\n--- Turn " << turn << " ---\n";
+
+        player.setMana(turn);
+        enemy.setMana(turn);
+
+        if (auto_mode) {
+            game.autoPlayerTurn();      // игрок ходит автоматически
+        }
+        else {
+            game.PlayerTurn();          // игрок вводит команды сам
+        }
+        enemy.autoEnemyTurn(player);    // враг ВСЕГДА ходит автоматически
+
+
+        player.printCaracterStatus(player, "Player");
+        enemy.printEnemyStatus(enemy,"Enemy: ");
+
+        turn++;
+    }
 }
+
+
