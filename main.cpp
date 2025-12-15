@@ -1,99 +1,88 @@
-﻿#include <iostream>
-#include <memory>
+#include "converter.h"
+#include "wave_file.h"
+#include <iostream>
 #include <vector>
-#include <thread>
-#include <chrono>
-#include <random>
-#include <ctime>
-
-#include "Character.h"
-#include "Enemy.h"
-#include "Card.h"
-#include "Game.h"
+#include <memory>
+#include <algorithm>
+#include <fstream>
+#include <map>
+#include <sstream>
 
 using namespace std;
 
-int main() {
-    Character player(30, 5, 10); // HP, Armor, Mana
-    Enemy enemy("Armored Goblin", 20, 10, 10);
-    Game game(player, enemy);
+struct Operations {
+    std::string name;
+    std::vector<std::string>args;
+    std::string output_name;
+};
 
+std::vector<Operations> Script(const std::string& file_name) {
+    std::vector<Operations> operations;
+    ifstream file(file_name);
+    string line;
+    int line_num = 0;
 
-    enemy.addCardToDeck(make_shared<Attack_card>("Slash", "Simple strike", 2, 3));
-    enemy.addCardToDeck(make_shared<Attack_card>("Heavy Blow", "Hard hit", 4, 5));
+    while (getline(file, line)) {
+        line_num++;
+        if (line.empty() || line[0] == '#') continue;
 
-    enemy.addCardToDeck(make_shared<Defense_card>("Shield", "Block", 2, 2));
-    enemy.addCardToDeck(make_shared<Heal_card>("Bandage", "Heal small", 3, 3));
+        istringstream iss(line);
+        Operations op;
+        string token;
 
-    enemy.addCardToDeck(make_shared<Debuff_card>("Deadly Venom", "Applies poison", 3, StatusType::Poison, 5, 1));
-    enemy.addCardToDeck(make_shared<Debuff_card>("Razor Cut", "Causes bleeding", 2, StatusType::Bleed, 3, 2));
-    enemy.addCardToDeck(make_shared<Debuff_card>("Crippling Fear", "Weakens enemy", 1, StatusType::Weak, 2, 2));
-    enemy.addCardToDeck(make_shared<Debuff_card>("Expose Armor", "Makes the enemy prone to incoming damage.", 2, StatusType::Vulnerable, 1, 2));
-    enemy.addCardToDeck(make_shared<Debuff_card>("Shatter Shield", "Reduces enemy armor effectiveness.", 2, StatusType::Fragile, 1, 2));
+        iss >> op.name;
 
-    player.addCardToDeck(make_shared<Attack_card>("Strike", "Basic attack", 2, 4));
-    player.addCardToDeck(make_shared<Defense_card>("Block", "Increase armor", 2, 3));
-
-    player.addCardToDeck(make_shared<Heal_card>("First Aid", "Restore health", 3, 5));
-
-    player.addCardToDeck(make_shared<Debuff_card>("Deadly Venom", "Applies poison", 3, StatusType::Poison, 5, 1));
-    player.addCardToDeck(make_shared<Debuff_card>("Razor Cut", "Causes bleeding", 2, StatusType::Bleed, 3, 2));
-    player.addCardToDeck(make_shared<Debuff_card>("Crippling Fear", "Weakens enemy", 1, StatusType::Weak, 2,2));
-    player.addCardToDeck(make_shared<Debuff_card>("Expose Armor",  "Makes the enemy prone to incoming damage.", 2, StatusType::Vulnerable, 1, 2));
-	player.addCardToDeck(make_shared<Debuff_card>("Shatter Shield", "Reduces enemy armor effectiveness.", 2, StatusType::Fragile, 1, 2));
-
-    player.drawCard();
-    player.drawCard();
-    player.drawCard();
-    player.drawCard();
-
-    enemy.drawCard();
-    enemy.drawCard();
-    enemy.drawCard();
-    enemy.drawCard();
-
-    bool auto_mode = false;
-    cout << "Choose mode:\n";
-    cout << "1 - Auto battle\n";
-    cout << "2 - Manual battle (you play your turn)\n";
-    cout << "> ";
-
-    int choice;
-    cin >> choice;
-
-    if (choice == 1) {
-        auto_mode = true;
-        cout << "\n[MODE] Auto battle enabled.\n";
-    }
-    else {
-        auto_mode = false;
-        cout << "\n[MODE] Manual mode enabled.\n";
-    }
-
-    std::cout << "Battle Start!" << endl;
-
-    int turn = 1;
-    while (player.getHealth() > 0 && enemy.getHealth() > 0) {
-        std::cout << "\n\n\n\n";
-        std::cout << "\n--- Turn " << turn << " ---\n";
-
-        player.setMana(turn);
-        enemy.setMana(turn);
-
-        if (auto_mode) {
-            game.autoPlayerTurn();      // игрок ходит автоматически
+        while (iss >> token) {
+            op.args.push_back(token);
         }
-        else {
-            game.PlayerTurn();          // игрок вводит команды сам
+
+        if (!op.args.empty()) {
+            op.output_name = op.args.back();
+            op.args.pop_back();
         }
-        enemy.autoEnemyTurn(player);    // враг ВСЕГДА ходит автоматически
 
-
-        player.printCaracterStatus(player, "Player");
-        enemy.printEnemyStatus(enemy,"Enemy: ");
-
-        turn++;
+        operations.push_back(op);
     }
+
+    return operations;
 }
+    
+int main(int argc, char* argv[]) {
+    if (argc < 4) {
+        std::cerr << "Usage: " << argv[0] << " <in1> <in2> <script>\n";
+        return 1;
+    }
 
+    const string file_in1 = argv[1];
+    const string file_in2 = argv[2];
+    const string script_file = argv[3];
 
+    vector<WavFile> files(2);
+
+    files[0].load(file_in1.c_str());
+    files[1].load(file_in2.c_str());
+
+    auto operations = Script(script_file);
+
+    for (const auto& op : operations) {
+
+        std::vector<const char*> args_cstr;
+        for (const auto& arg : op.args) {
+            args_cstr.push_back(arg.c_str());
+        }
+
+        auto converter = ConverterFactory::create(op.name.c_str(), args_cstr);
+        std::vector<WavFile> working_files = files;
+
+        converter->apply(working_files);
+
+        int target_file = converter->getTargetFile();
+        if (target_file >= 0 && target_file < working_files.size()) {
+            std::cout << "Saving to: " << op.output_name << std::endl;
+            working_files[target_file].save(op.output_name.c_str());
+        }
+
+        else { std::cerr << "Error: Invalid target file index: " << target_file << std::endl; }
+    }
+    return 0;
+}

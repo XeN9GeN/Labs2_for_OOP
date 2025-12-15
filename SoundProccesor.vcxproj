@@ -18,6 +18,15 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="converter.h" />
+    <ClInclude Include="wave_file.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="converter.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="wave_file.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -122,15 +131,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="SoundInfo.cpp" />
-    <ClCompile Include="SoundProccFunc.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="SoundInfo.h" />
-    <ClInclude Include="SoundProccFunc.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
